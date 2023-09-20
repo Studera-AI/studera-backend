@@ -1,3 +1,10 @@
+import { User } from "../entities/users";
+
+export interface UserDto extends User {
+  token?: string;
+  expiresIn?: string;
+}
+
 export interface CreateUserDto {
   name: string;
   email: string;

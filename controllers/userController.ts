@@ -1,7 +1,7 @@
 import { Request, Response } from "express";
 const bcrypt = require("bcrypt");
-import { CreateUserDto, LoginUserDto, SALT_ROUNDS } from "../dto";
-import { createUser } from "../utils";
+import { CreateUserDto, LoginUserDto, SALT_ROUNDS, UserDto } from "../dto";
+import { createUser, generateToken } from "../utils";
 import { AppDataSource } from "../ormconfig";
 import { User } from "../entities/users";
 
@@ -45,12 +45,19 @@ export const signInUser = async (req: Request, res: Response) => {
 
   try {
     const userRepository = AppDataSource.getRepository(User);
-    const user = await userRepository.findOneBy({
+    let user: UserDto | null = await userRepository.findOneBy({
       email: email,
     });
     if (!user) return res.status(404).json({ message: "User does not exist" });
     const isUser = await bcrypt.compare(password, user.password);
     if (!isUser) return res.status(401).json({ message: "Invalid Password" });
+    const { name } = user;
+    const token = generateToken({ name, email, password });
+    user = {
+      ...user,
+      token,
+      expiresIn: "1d",
+    };
     return res.status(200).json({ message: "Login Successful", user });
   } catch (error) {
     console.error(error);
