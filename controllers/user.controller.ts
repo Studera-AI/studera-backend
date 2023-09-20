@@ -4,12 +4,15 @@ import { CreateUserDto, LoginUserDto, SALT_ROUNDS, UserDto } from "../dto";
 import { createUser, generateToken } from "../utils";
 import { AppDataSource } from "../ormconfig";
 import { User } from "../entities/users";
+import { instanceToPlain } from "class-transformer";
 
 export const getUser = async (req: Request, res: Response) => {
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
   const userRepository = AppDataSource.getRepository(User);
   const user = await userRepository.findOneBy({ email: req.user?.email });
-  return res.status(200).json({ message: "User found", user });
+  return res
+    .status(200)
+    .json({ message: "User found", user: instanceToPlain(user) });
 };
 
 export const signUpUser = async (req: Request, res: Response) => {
@@ -37,10 +40,11 @@ export const signUpUser = async (req: Request, res: Response) => {
     if (!user) return res.status(500).json({ message: "Error creating user." });
 
     const token = generateToken({ name, email, password });
+    const newuser = instanceToPlain(user);
 
     return res.status(201).json({
       message: "User created successfully",
-      user: { ...user, token, expiresIn: "1d" },
+      user: instanceToPlain({ ...newuser, token, expiresIn: "1d" }),
     });
   } catch (error) {
     console.error("Error:", error);
@@ -55,7 +59,7 @@ export const signInUser = async (req: Request, res: Response) => {
 
   try {
     const userRepository = AppDataSource.getRepository(User);
-    const user: UserDto | null = await userRepository.findOneBy({
+    let user: UserDto | null = await userRepository.findOneBy({
       email: email,
     });
     if (!user) return res.status(404).json({ message: "User does not exist" });
@@ -63,13 +67,10 @@ export const signInUser = async (req: Request, res: Response) => {
     if (!isUser) return res.status(401).json({ message: "Invalid Password" });
     const { name } = user;
     const token = generateToken({ name, email, password });
+    const newuser = instanceToPlain(user);
     return res.status(200).json({
       message: "Login Successful",
-      user: {
-        ...user,
-        token,
-        expiresIn: "1d",
-      },
+      user: { ...newuser, token, expiresIn: "1d" },
     });
   } catch (error) {
     console.error(error);
