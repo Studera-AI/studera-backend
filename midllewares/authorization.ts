@@ -12,9 +12,7 @@ declare module "express-serve-static-core" {
 }
 
 export const auth = async (req: Request, res: Response, next: NextFunction) => {
-  const token: string | undefined = await req.headers.authorization?.split(
-    " "
-  )[1];
+  const token: string | undefined = req.headers.authorization?.split(" ")[1];
 
   if (token === undefined) {
     return res.status(401).json({ message: "Unauthorized" });

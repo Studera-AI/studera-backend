@@ -2,14 +2,15 @@ import { Router } from "express";
 const router = Router();
 
 import {
-  //   getUser,
+  getUser,
   signInUser,
   signUpUser,
   //   updateUser,
   //   deleteUser,
-} from "../controllers/userController";
+} from "../controllers/user.controller";
+import { auth } from "../midllewares/authorization";
 
-// router.get("/user", getUser);
+router.get("/user", auth, getUser);
 
 router.post("/signup", signUpUser);
 
