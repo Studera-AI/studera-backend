@@ -10,9 +10,9 @@ export const getUser = async (req: Request, res: Response) => {
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
   const userRepository = AppDataSource.getRepository(User);
   const user = await userRepository.findOneBy({ email: req.user?.email });
-  return res
-    .status(200)
-    .json({ message: "User found", user: instanceToPlain(user) });
+  if (!user) return res.status(404).json({ message: "User not found" });
+  user!.password = ""; // USE TYPEORM SELECT
+  return res.status(200).json({ message: "User found", user });
 };
 
 export const signUpUser = async (req: Request, res: Response) => {
@@ -40,11 +40,12 @@ export const signUpUser = async (req: Request, res: Response) => {
     if (!user) return res.status(500).json({ message: "Error creating user." });
 
     const token = generateToken({ name, email, password });
-    const newuser = instanceToPlain(user);
+    // const newuser = instanceToPlain(user);
+    user.password = ""; // USE TYPEORM SELECT
 
     return res.status(201).json({
       message: "User created successfully",
-      user: instanceToPlain({ ...newuser, token, expiresIn: "1d" }),
+      user: instanceToPlain({ ...user, token, expiresIn: "1d" }),
     });
   } catch (error) {
     console.error("Error:", error);
@@ -67,10 +68,11 @@ export const signInUser = async (req: Request, res: Response) => {
     if (!isUser) return res.status(401).json({ message: "Invalid Password" });
     const { name } = user;
     const token = generateToken({ name, email, password });
-    const newuser = instanceToPlain(user);
+    // const newuser = instanceToPlain(user);
+    user.password = ""; // USE TYPEORM SELECT
     return res.status(200).json({
       message: "Login Successful",
-      user: { ...newuser, token, expiresIn: "1d" },
+      user: { ...user, token, expiresIn: "1d" },
     });
   } catch (error) {
     console.error(error);
@@ -78,4 +80,29 @@ export const signInUser = async (req: Request, res: Response) => {
   }
 };
 
-const userController = () => {};
+export const updateUser = async (req: Request, res: Response) => {
+  if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  const { email } = req.user!;
+  const userRepository = AppDataSource.getRepository(User);
+  const user = await userRepository.findOneBy({ email: email });
+  if (!user) return res.status(404).json({ message: "User not found" });
+  return res
+    .status(200)
+    .json({ message: "User found", user: instanceToPlain(user) }); //TODO: Update user
+};
+
+export const deleteUser = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+    const { email } = req.user!;
+    const userRepository = AppDataSource.getRepository(User);
+    const user = await userRepository.findOne({ where: { email: email } });
+    if (!user) return res.status(404).json({ message: "User not found" });
+    await userRepository.delete(user.id);
+    console.log("User deleted successfully");
+    return res.status(200).json({ message: "User deleted successfully" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "An Error Occurred" });
+  }
+};

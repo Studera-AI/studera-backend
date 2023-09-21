@@ -5,10 +5,10 @@ import {
   getUser,
   signInUser,
   signUpUser,
-  //   updateUser,
-  //   deleteUser,
+  updateUser,
+  deleteUser,
 } from "../controllers/user.controller";
-import { auth } from "../midllewares/authorization";
+import { auth } from "../middlewares";
 
 router.get("/user", auth, getUser);
 
@@ -16,8 +16,8 @@ router.post("/signup", signUpUser);
 
 router.post("/signin", signInUser);
 
-// router.patch("/user", updateUser);
+router.patch("/user", auth, updateUser);
 
-// router.delete("user", deleteUser);
+router.delete("/user", auth, deleteUser);
 
 module.exports = router;
