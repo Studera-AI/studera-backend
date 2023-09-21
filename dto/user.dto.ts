@@ -5,6 +5,12 @@ export interface UserDto extends User {
   expiresIn?: string;
 }
 
+export interface UserPayload {
+  name?: string;
+  email?: string;
+  password?: string;
+}
+
 export interface CreateUserDto {
   name: string;
   email: string;

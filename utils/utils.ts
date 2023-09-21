@@ -19,7 +19,7 @@ export const createUser = async ({ name, email, password }: CreateUserDto) => {
 
 export const generateToken = ({ name, email, password }: CreateUserDto) => {
   const token: string = jwt.sign({ email, password }, process.env.JWT_SECRET, {
-    expiresIn: "1d",
+    expiresIn: "24h",
   });
   return token;
 };
