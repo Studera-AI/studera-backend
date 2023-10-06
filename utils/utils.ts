@@ -24,8 +24,8 @@ export const generateToken = ({ name, email, password }: CreateUserDto) => {
   return token;
 };
 
-// export const verifyToken = async (token: string) => {
-//   const isValid = await jwt.verify(token, process.env.JWT_SECRET);
-//   console.log(isValid);
-//   return isValid;
-// };
+export const specifyPrompt = (str: string): number => {
+  let arr = str.split(" ");
+  let num = Number(arr[0]);
+  return Math.ceil(num / 5);
+};
