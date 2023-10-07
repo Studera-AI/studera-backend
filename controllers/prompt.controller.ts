@@ -8,7 +8,7 @@ import { Request, Response } from "express";
 const Openai = require("openai");
 require("dotenv").config();
 import { generatePrompt1, generateTestPrompt, specifyPrompt } from "../utils";
-import { PromptPayload, testPayload } from "../dto";
+import { PromptPayload, submitTestPayload, testPayload } from "../dto";
 import { AppDataSource } from "../ormconfig";
 import { User } from "../entities/users";
 
@@ -116,8 +116,7 @@ export const submitTest = async (req: Request, res: Response) => {
     }
 
     const { email } = req.user!;
-
-    const { userScore, maxScore, title, day } = req.body;
+    const { userScore, maxScore, title, day } = <submitTestPayload>req.body;
 
     const userRepository = AppDataSource.getRepository(User);
 
@@ -130,27 +129,52 @@ export const submitTest = async (req: Request, res: Response) => {
     const learnings: PromptPayload[] =
       (user.learnings as PromptPayload[]) || [];
 
-    const learning = learnings.find((learning) => learning.title === title);
+    let learning = learnings.find((learning) => learning.title === title);
 
     if (!learning) {
       return res.status(404).json({ message: "Learning not found" });
     }
+    learning = <PromptPayload>learning;
 
-    const learningData = JSON.parse(learning.data!);
-    const learningDay = learningData.study_plan.find(
+    let learningData = JSON.parse(learning.data!);
+    let learningDay = learningData.study_plan.find(
       (obj: any) => obj.day === Number(day)
     );
 
     if (!learningDay) {
       return res.status(404).json({ message: "Day not found" });
     }
+
     if (!learningDay.scores) {
-      learningDay.scores = [];
+      learningDay.scores = <testPayload | unknown>[];
     }
+
     learningDay.scores.push({ score: userScore, maxScore: maxScore });
-    const updated_user = { ...user, learnings: [...learnings, ...learningDay] };
-    console.log(updated_user);
-    return res.status(200).json({ message: "success" });
+
+    // Update the specific learning day within the study plan
+    learningData.study_plan = learningData.study_plan.map((obj: any) =>
+      obj.day === Number(day) ? learningDay : obj
+    );
+
+    // Update the learning object with the modified data
+    learning = {
+      ...learning,
+      data: JSON.stringify(learningData),
+    };
+
+    // Update the user's learnings array with the modified learning object
+    const updatedUserLearnings = learnings.map((item) =>
+      item.title === title ? <PromptPayload>learning : item
+    );
+
+    // Update the user object with the modified learnings array
+    const updatedUser = {
+      ...user,
+      learnings: updatedUserLearnings,
+    };
+
+    userRepository.save(updatedUser);
+    return res.status(200).json({ message: "success", user: updatedUser });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ message: "Internal Server Error" });

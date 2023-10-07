@@ -1,5 +1,5 @@
 export interface scores {
-  score: number;
+  userScore: number;
   maxScore: number;
 }
 
