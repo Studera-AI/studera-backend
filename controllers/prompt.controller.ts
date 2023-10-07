@@ -7,8 +7,8 @@
 import { Request, Response } from "express";
 const Openai = require("openai");
 require("dotenv").config();
-import { generatePrompt1, specifyPrompt } from "../utils";
-import { PromptPayload } from "../dto";
+import { generatePrompt1, generateTestPrompt, specifyPrompt } from "../utils";
+import { PromptPayload, testPayload } from "../dto";
 import { AppDataSource } from "../ormconfig";
 import { User } from "../entities/users";
 
@@ -32,7 +32,6 @@ export const generateResource = async (req: Request, res: Response) => {
       data: prevLearning.data,
     });
   } else {
-    const promptfn = specifyPrompt(timeframe);
     const prompt = generatePrompt1(title, timeframe, type);
     const completion = await openai.chat.completions.create({
       messages: [{ role: "system", content: prompt }],
@@ -56,15 +55,104 @@ export const generateResource = async (req: Request, res: Response) => {
       message: "success",
       data: data,
     });
-    // for (let i = 1; i<=promptfn; i++) {
-    //   if(i===1){
-    //     continue
-    //   }
-    //   const completion = await openai.chat.completions.create({
-    //     messages: [{ role: "system", content: prompt }],
-    //     model: "gpt-3.5-turbo",
-    //   });
-    //   const data = <slocalhost:5000/resourcetring>completion.choices[0].message.content;
-    // }
+  }
+};
+
+export const generateTest = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { email } = req.user!;
+    const { day, title } = <testPayload>req.body;
+
+    const userRepository = AppDataSource.getRepository(User);
+
+    const user = await userRepository.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const learnings: PromptPayload[] =
+      (user.learnings as PromptPayload[]) || [];
+
+    const learning = learnings.find((learning) => learning.title === title);
+
+    if (!learning) {
+      return res.status(404).json({ message: "Learning not found" });
+    }
+
+    const learningData = JSON.parse(learning.data!);
+    const learningDay = learningData.study_plan.find(
+      (obj: any) => obj.day === Number(day)
+    );
+
+    if (!learningDay) {
+      return res.status(404).json({ message: "Day not found" });
+    }
+
+    const prompt = generateTestPrompt(JSON.stringify(learningDay));
+
+    const completion = await openai.chat.completions.create({
+      messages: [{ role: "system", content: prompt }],
+      model: "gpt-3.5-turbo",
+    });
+
+    const responseData = <string>completion.choices[0].message.content;
+
+    return res.status(200).json({ res: JSON.parse(responseData) });
+  } catch (error) {
+    console.error("Error generating test:", error);
+    return res.status(500).json({ message: "Internal Server Error" });
+  }
+};
+
+export const submitTest = async (req: Request, res: Response) => {
+  try {
+    if (!req.user) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+
+    const { email } = req.user!;
+
+    const { userScore, maxScore, title, day } = req.body;
+
+    const userRepository = AppDataSource.getRepository(User);
+
+    const user = await userRepository.findOne({ where: { email } });
+
+    if (!user) {
+      return res.status(404).json({ message: "User not found" });
+    }
+
+    const learnings: PromptPayload[] =
+      (user.learnings as PromptPayload[]) || [];
+
+    const learning = learnings.find((learning) => learning.title === title);
+
+    if (!learning) {
+      return res.status(404).json({ message: "Learning not found" });
+    }
+
+    const learningData = JSON.parse(learning.data!);
+    const learningDay = learningData.study_plan.find(
+      (obj: any) => obj.day === Number(day)
+    );
+
+    if (!learningDay) {
+      return res.status(404).json({ message: "Day not found" });
+    }
+    if (!learningDay.scores) {
+      learningDay.scores = [];
+    }
+    learningDay.scores.push({ score: userScore, maxScore: maxScore });
+    const updated_user = { ...user, learnings: [...learnings, ...learningDay] };
+    console.log(updated_user);
+    return res.status(200).json({ message: "success" });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ message: "Internal Server Error" });
   }
 };
