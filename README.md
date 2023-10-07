@@ -38,7 +38,7 @@ To set up the Studera backend on your local machine, follow these steps:
    The server will be available at `http://localhost:5000`.
 
 ### API Endpoints
-The available API endpoints would be updated here soon!!!
+The available API endpoints are available in ENDPOINTS.md
 
 ### Additional Notes
 
