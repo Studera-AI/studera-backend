@@ -1,6 +1,12 @@
 import { Request, Response } from "express";
 const bcrypt = require("bcrypt");
-import { CreateUserDto, LoginUserDto, SALT_ROUNDS, UserDto } from "../dto";
+import {
+  CreateUserDto,
+  LoginUserDto,
+  SALT_ROUNDS,
+  UserDto,
+  note,
+} from "../dto";
 import { createUser, generateToken } from "../utils";
 import { AppDataSource } from "../ormconfig";
 import { User } from "../entities/users";
@@ -80,16 +86,36 @@ export const signInUser = async (req: Request, res: Response) => {
   }
 };
 
+//HANDLE NOTES
 export const updateUser = async (req: Request, res: Response) => {
   if (!req.user) return res.status(401).json({ message: "Unauthorized" });
+  const { note }: { note: note } = req.body;
+
   const { email } = req.user!;
   const userRepository = AppDataSource.getRepository(User);
   const user = await userRepository.findOneBy({ email: email });
   if (!user) return res.status(404).json({ message: "User not found" });
-  const newuser = { ...user, ...req.body };
-  console.log(newuser);
-  userRepository.save(newuser);
-  return res.status(200).json({ message: "User found", user: newuser });
+
+  if (!user.notes) {
+    user.notes = [];
+  }
+
+  console.log(user.notes);
+  const userNotesIndex = user.notes.findIndex(
+    (noteItem) => noteItem.title === note.title
+  );
+
+  if (userNotesIndex === -1) {
+    user.notes = [...user.notes, note];
+  } else {
+    user.notes[userNotesIndex] = note;
+  }
+  console.log(note);
+  console.log(user.notes);
+
+  await userRepository.save(user);
+
+  return res.status(200).json({ message: "User found", user });
 };
 
 export const deleteUser = async (req: Request, res: Response) => {

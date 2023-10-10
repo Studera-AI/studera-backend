@@ -16,4 +16,14 @@ export interface LoginUserDto {
   password: string;
 }
 
+export interface note {
+  title?: string;
+  content?: noteItem;
+}
+
+interface noteItem {
+  day?: number;
+  note?: string;
+}
+
 export const SALT_ROUNDS = 10;

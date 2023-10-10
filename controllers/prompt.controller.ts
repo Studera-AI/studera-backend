@@ -85,15 +85,17 @@ export const generateTest = async (req: Request, res: Response) => {
     }
 
     const learningData = JSON.parse(learning.data!);
-    const learningDay = learningData.study_plan.find(
-      (obj: any) => obj.day === Number(day)
-    );
+    const studyPlan = learningData.study_plan || learningData.studyPlan;
+    const learningDay = studyPlan.find((obj: any) => {
+      return obj.day === Number(day);
+    });
 
     if (!learningDay) {
       return res.status(404).json({ message: "Day not found" });
     }
 
     const prompt = generateTestPrompt(JSON.stringify(learningDay));
+    console.log(prompt);
 
     const completion = await openai.chat.completions.create({
       messages: [{ role: "system", content: prompt }],

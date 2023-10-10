@@ -6,6 +6,7 @@ import {
   UpdateDateColumn,
 } from "typeorm";
 import { Exclude } from "class-transformer";
+import { note } from "../dto";
 
 @Entity({ name: "users" })
 export class User {
@@ -30,4 +31,7 @@ export class User {
 
   @Column()
   learnings!: object[];
+
+  @Column()
+  notes!: note[];
 }
