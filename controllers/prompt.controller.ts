@@ -87,7 +87,8 @@ export const generateTest = async (req: Request, res: Response) => {
     const learningData = JSON.parse(learning.data!);
     const studyPlan = learningData.study_plan || learningData.studyPlan;
     const learningDay = studyPlan.find((obj: any) => {
-      return obj.day === Number(day);
+      console.log(obj.day.split(" ")[1]);
+      return obj.day.split(" ")[1] == Number(day);
     });
 
     if (!learningDay) {
