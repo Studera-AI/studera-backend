@@ -1,9 +1,15 @@
 import { Router } from "express";
-import { getAllUsers, deleteAllUsers } from "../controllers/admin.controller";
-import { requireAdminAccess } from "../middlewares";
+import {
+  getAllUsers,
+  deleteAllUsers,
+  userFeedback,
+} from "../controllers/admin.controller";
+import { auth, requireAdminAccess } from "../middlewares";
 const router = Router();
 
 router.get("/admin", requireAdminAccess, getAllUsers);
+
+router.post("/feedback", auth, userFeedback);
 
 router.delete("/admin", requireAdminAccess, deleteAllUsers);
 
