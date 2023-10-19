@@ -9,7 +9,7 @@ const router = Router();
 
 router.get("/admin", requireAdminAccess, getAllUsers);
 
-router.post("/feedback", auth, userFeedback);
+router.post("/feedback", userFeedback);
 
 router.delete("/admin", requireAdminAccess, deleteAllUsers);
 
